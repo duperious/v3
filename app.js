@@ -243,7 +243,6 @@ playBtn.addEventListener('click', () => {
     gameScreen.classList.remove('hidden');
     ensureAudio();
     startGame();
-    // Real-time listener is already started in window.onload
 });
 
 menuBtn.addEventListener('click', () => {
