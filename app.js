@@ -243,7 +243,7 @@ playBtn.addEventListener('click', () => {
     gameScreen.classList.remove('hidden');
     ensureAudio();
     startGame();
-    fetchLeaderboard();
+    // Real-time listener is already started in window.onload
 });
 
 menuBtn.addEventListener('click', () => {
@@ -854,51 +854,58 @@ function showGoldPopup(amount, r, c) {
     setTimeout(() => el.remove(), 1300);
 }
 
-// ===================== GLOBAL LEADERBOARD LOGIC (FIREBASE) =====================
-async function fetchLeaderboard() {
+// ===================== GLOBAL LEADERBOARD LOGIC (FIREBASE REAL-TIME) =====================
+function startLeaderboardListener() {
     if (!top5ContentEl) return;
-    try {
-        const snapshot = await db.collection('scores')
-            .orderBy('score', 'desc')
-            .limit(5)
-            .get();
-        
-        if (!snapshot.empty) {
-            top5ContentEl.innerHTML = snapshot.docs.map(doc => {
-                const data = doc.data();
-                return `
-                    <div class="top-item">
-                        <span class="name">${data.name || 'Anonim'}</span>
-                        <span class="score">${data.score}</span>
-                    </div>
-                `;
-            }).join('');
-        } else {
-            top5ContentEl.innerHTML = "<span>Henüz skor yok, ilk sen ol!</span>";
-        }
-    } catch (e) {
-        console.warn("Liderlik tablosu yüklenemedi:", e);
-        if (top5ContentEl.innerHTML.includes("Yükleniyor")) {
-            top5ContentEl.innerHTML = "<span>Skorlar yüklenemedi.</span>";
-        }
-    }
+    
+    // onSnapshot provides "Live" updates
+    db.collection('scores')
+        .orderBy('score', 'desc')
+        .limit(5)
+        .onSnapshot((snapshot) => {
+            if (!snapshot.empty) {
+                top5ContentEl.innerHTML = snapshot.docs.map((doc, index) => {
+                    const data = doc.data();
+                    const rank = index + 1;
+                    let badge = rank;
+                    if (rank === 1) badge = '🥇';
+                    if (rank === 2) badge = '🥈';
+                    if (rank === 3) badge = '🥉';
+
+                    return `
+                        <div class="top-item rank-${rank}">
+                            <span class="rank-num">${badge}</span>
+                            <span class="name">${data.name || 'Anonim'}</span>
+                            <span class="score">${data.score.toLocaleString()}</span>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                top5ContentEl.innerHTML = "<span>Henüz skor yok, ilk sen ol!</span>";
+            }
+        }, (error) => {
+            console.warn("Liderlik tablosu dinlenemedi:", error);
+        });
 }
 
 async function submitScore(name, score) {
     if (!name || score <= 0) return;
     try {
-        const finalName = name.substring(0, 12);
+        const finalName = name.trim().substring(0, 12);
+        const docRef = db.collection('scores').doc(finalName);
         
-        await db.collection('scores').add({
-            name: finalName,
-            score: score,
-            date: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        console.log("Skor Firebase'e kaydedildi:", finalName, score);
-        
-        // Refresh after a short delay
-        setTimeout(fetchLeaderboard, 1000);
+        // Only update if the new score is higher (Personal Best logic)
+        const doc = await docRef.get();
+        if (!doc.exists || score > doc.data().score) {
+            await docRef.set({
+                name: finalName,
+                score: score,
+                date: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log("Yeni rekor kaydedildi:", finalName, score);
+        } else {
+            console.log("Mevcut rekor daha yüksek, kaydedilmedi.");
+        }
     } catch (e) {
         console.warn("Skor gönderilemedi:", e);
     }
@@ -948,6 +955,6 @@ window.onload = () => {
         nameInputEl.value = playerName;
     }
 
-    fetchLeaderboard();
+    startLeaderboardListener();
     resetHintTimer();
 };

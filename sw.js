@@ -1,20 +1,18 @@
-const CACHE_NAME = 'princess-sweets-v2.0'; // Version incremented
+const CACHE_NAME = 'sweet-merge-v3.0'; // Version incremented to force update
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './game.js',
   './app.js',
-  './manifest.json',
-  './princess.png'
+  './manifest.json'
 ];
 
 // Install Event
 self.addEventListener('install', (e) => {
-  self.skipWaiting(); // Force the waiting service worker to become the active service worker
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Caching all assets');
       return cache.addAll(ASSETS);
     })
   );
@@ -27,20 +25,26 @@ self.addEventListener('activate', (e) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            console.log('[Service Worker] Clearing Old Cache');
             return caches.delete(cache);
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
-// Fetch Event
+// Fetch Event - Stale-While-Revalidate Strategy
+// Serves from cache immediately, but updates cache in background
 self.addEventListener('fetch', (e) => {
   e.respondWith(
-    caches.match(e.request).then((response) => {
-      return response || fetch(e.request);
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.match(e.request).then((cachedResponse) => {
+        const fetchedResponse = fetch(e.request).then((networkResponse) => {
+          cache.put(e.request, networkResponse.clone());
+          return networkResponse;
+        });
+        return cachedResponse || fetchedResponse;
+      });
     })
   );
 });
