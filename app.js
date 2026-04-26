@@ -858,14 +858,28 @@ function showGoldPopup(amount, r, c) {
 function startLeaderboardListener() {
     if (!top5ContentEl) return;
     
-    // onSnapshot provides "Live" updates
+    // Fetch more docs (limit 100) to find unique people even with old duplicates
     db.collection('scores')
         .orderBy('score', 'desc')
-        .limit(5)
+        .limit(100)
         .onSnapshot((snapshot) => {
             if (!snapshot.empty) {
-                top5ContentEl.innerHTML = snapshot.docs.map((doc, index) => {
+                // Deduplication logic: One name, one highest score
+                const uniqueScoresMap = new Map();
+                snapshot.docs.forEach(doc => {
                     const data = doc.data();
+                    const name = (data.name || 'Anonim').trim();
+                    if (!uniqueScoresMap.has(name) || data.score > uniqueScoresMap.get(name).score) {
+                        uniqueScoresMap.set(name, data);
+                    }
+                });
+
+                // Sort unique scores and take top 5
+                const sortedUnique = Array.from(uniqueScoresMap.values())
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, 5);
+
+                top5ContentEl.innerHTML = sortedUnique.map((data, index) => {
                     const rank = index + 1;
                     let badge = rank;
                     if (rank === 1) badge = '🥇';
