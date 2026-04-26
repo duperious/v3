@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sweet Merge</title>
+    <link rel="stylesheet" href="style.css?v=2.0">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json?v=2.0">
+</head>
+<body>
+
+    <!-- ===== MAIN MENU SCREEN ===== -->
+    <div id="menu-screen">
+        <div class="menu-bg-particles" id="menu-particles"></div>
+        <div class="menu-content">
+            <div class="menu-logo">🍰</div>
+            <h1 class="menu-title">Sweet<br><span>Merge</span></h1>
+            <p class="menu-subtitle">Aynı tatlıdan 3 tanesini birleştirerek büyüt!</p>
+            
+            <!-- Name Input Field -->
+            <div class="name-input-area">
+                <input type="text" id="player-name-input" placeholder="İsminiz (Opsiyonel)" maxlength="12">
+            </div>
+
+            <button class="menu-play-btn" id="play-btn">
+                <span>🍰</span> OYNA
+            </button>
+            <div class="menu-sweets-row">
+                <span>🍬</span><span>🥐</span><span>🍫</span><span>🧁</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== GAME SCREEN ===== -->
+    <div id="game-screen" class="hidden">
+        <div class="app-container">
+            <!-- Princess & Header Area -->
+                <div class="header-main">
+                    <div class="header-left">
+                        <button class="icon-btn" id="menu-btn" title="Menü">🏠</button>
+                        <div class="highscore-container">En İyi: <span id="high-score">0</span></div>
+                        <div class="gold-container">🪙 <span id="gold-count">0</span></div>
+                    </div>
+                    
+                    <div class="info-area">
+                        <div class="header-goal" id="guide-text">Aynı 3 tatlıyı yanyana getir!</div>
+                        <div id="motivation-text" class="motivation-text">Harika gidiyorsun! 🍰</div>
+                    </div>
+                    
+                    <div class="header-right">
+                        <div class="header-btns">
+                            <button class="icon-btn" id="restart-btn" title="Yeniden Başla">🔄</button>
+                            <button class="mute-btn" id="mute-btn">🔊</button>
+                        </div>
+                        <div class="score-container">Skor: <span id="score">0</span></div>
+                    </div>
+                </div>
+
+                <!-- Global Top 5 List -->
+                <div id="top-5-container" class="top-5-list">
+                    <div class="top-5-header">🏆 TOP 5</div>
+                    <div id="top-5-content" class="top-5-content">
+                        <span>Yükleniyor...</span>
+                    </div>
+                </div>
+
+            <!-- Game Area -->
+            <main class="game-area">
+                <div class="game-board-bg">
+                    <div class="grid-container" id="grid"></div>
+                </div>
+            </main>
+
+            <!-- Footer / UI removed as score moved to header -->
+
+            <!-- Power-up Bar -->
+            <!-- Footer Area -->
+            <div class="footer-area">
+                <div class="evolution-bar">
+                    <span>🍬</span>➔<span>🥐</span>➔<span>🟫</span>➔<span>🍫</span>➔<span>🥧</span>➔<span>🍰</span>➔<span>🍮</span>➔<span>🎂</span>➔<span>🍩</span>➔<span>🧁</span>
+                </div>
+                
+                <div class="powerup-bar">
+                    <div class="powerup-col">
+                        <button class="power-circle-btn" id="heart-btn" title="Can">
+                            <span class="powerup-icon">❤️</span>
+                            <span class="powerup-badge" id="heart-count-label">0</span>
+                        </button>
+                        <div class="powerup-timer" id="heart-timer">00:00</div>
+                    </div>
+                    <div class="powerup-col">
+                        <button class="power-circle-btn" id="shuffle-btn" title="Karıştır">
+                            <span class="powerup-icon">🔀</span>
+                            <span class="powerup-badge" id="shuffle-count-label">0</span>
+                        </button>
+                    </div>
+                    <div class="powerup-col">
+                        <button class="convert-btn" id="convert-btn" title="5 Geri Al -> 1 Karıştır">
+                            1🔀 ⟵ 5↩️
+                        </button>
+                    </div>
+                    <div class="powerup-col">
+                        <button class="power-circle-btn" id="undo-btn" title="Geri Al">
+                            <span class="powerup-icon">↩️</span>
+                            <span class="powerup-badge" id="undo-count-label">0</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rocket/Bomb Explosion Overlay (global, not inside game screen) -->
+    <div id="rocket-overlay"></div>
+
+    <!-- Game Over Modal -->
+    <div class="modal" id="lose-modal">
+        <div class="modal-content">
+            <h2>Oyun Bitti! 😢</h2>
+            <p>Tahtada yapılabilecek eşleşme kalmadı.</p>
+            <div class="big-sweet">💔</div>
+            <p id="heart-usage-info"></p>
+            <div class="modal-buttons">
+                <button class="action-btn" id="use-heart-btn" style="display:none; background: #ff6b81;">💖 Can Kullan (Devam Et)</button>
+                <button class="action-btn" id="use-gold-btn" style="display:none; background: #ffd700; color: #5d4037;">🪙 150 Altınla Devam Et</button>
+                <button class="action-btn" id="use-shuffle-btn" style="display:none; background: #2196f3;">🔀 5 Karıştırmayla Devam Et</button>
+                <button class="action-btn" id="retry-btn" style="background: #4caf50;">🔄 Yeniden Başla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <script src="game.js?v=2.0"></script>
+    <script src="app.js?v=2.0"></script>
+</body>
+</html>
