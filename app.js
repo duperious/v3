@@ -15,7 +15,6 @@ const muteBtn        = document.getElementById('mute-btn');
 const shuffleBtn     = document.getElementById('shuffle-btn');
 const undoBtn        = document.getElementById('undo-btn');
 const restartBtn     = document.getElementById('restart-btn');
-const rocketOverlay  = document.getElementById('rocket-overlay');
 
 const shuffleCountLabel = document.getElementById('shuffle-count-label');
 const undoCountLabel    = document.getElementById('undo-count-label');
@@ -207,8 +206,6 @@ game.onGameOver      = () => {
 };
 game.onSoundEvent    = playSound;
 game.onPowerupChange = (shuffle, undo) => updatePowerupButtons(shuffle, undo);
-game.onRocketExplode = (r, c) => showRocketBeam(r, c);
-game.onBombExplode   = (r, c) => showTNTExplosion(r, c);
 game.onBigMerge = (bonusType, r, c, offX = 0, offY = 0) => {
     let emoji = "";
     let targetId = "";
@@ -248,7 +245,7 @@ playBtn.addEventListener('click', () => {
 menuBtn.addEventListener('click', () => {
     gameScreen.classList.add('hidden');
     menuScreen.classList.remove('hidden');
-    fetchLeaderboard(); // Refresh scores when returning to menu
+    startLeaderboardListener(); // Refresh scores when returning to menu
 });
 
 // Floating particles on menu
@@ -606,9 +603,6 @@ function updatePowerupButtons(shuffle, undo) {
 // ===================== TILE RENDERING =====================
 function getSweetInfo(val) {
     if (val === 0)   return { emoji: '',   cls: '' };
-    if (val === 100) return { emoji: '📦', cls: 'obstacle-box' };
-    if (val === 200) return { emoji: '🚀', cls: 'bomb-rocket' };
-    if (val === 300) return { emoji: '💣', cls: 'bomb-tnt' };
     const s = SWEETS.find(s => s.level === val);
     return s ? { emoji: s.emoji, cls: `level-${val}` } : { emoji: '', cls: '' };
 }
@@ -756,49 +750,6 @@ function getTileCenter(r, c) {
     };
 }
 
-function showRocketBeam(r, c) {
-    const { x, y } = getTileCenter(r, c);
-
-    const h = document.createElement('div');
-    h.className = 'rocket-beam-h';
-    h.style.top = (y - 4) + 'px';
-    rocketOverlay.appendChild(h);
-
-    const v = document.createElement('div');
-    v.className = 'rocket-beam-v';
-    v.style.left = (x - 4) + 'px';
-    rocketOverlay.appendChild(v);
-
-    setTimeout(() => { h.remove(); v.remove(); }, 500);
-}
-
-function showTNTExplosion(r, c) {
-    const { x, y } = getTileCenter(r, c);
-
-    // Main shockwave circle
-    const sw = document.createElement('div');
-    sw.className = 'bomb-shockwave';
-    sw.style.left = x + 'px';
-    sw.style.top  = y + 'px';
-    document.body.appendChild(sw);
-
-    // 8 debris particles
-    const debrisEmojis = ['💥','✨','⭐','🔥','💫'];
-    for (let i = 0; i < 8; i++) {
-        const d = document.createElement('div');
-        d.className = 'gold-popup';
-        d.innerText = debrisEmojis[Math.floor(Math.random() * debrisEmojis.length)];
-        const angle = (i / 8) * Math.PI * 2;
-        const dist  = 50 + Math.random() * 40;
-        d.style.left = (x + Math.cos(angle) * dist) + 'px';
-        d.style.top  = (y + Math.sin(angle) * dist) + 'px';
-        d.style.fontSize = '20px';
-        document.body.appendChild(d);
-        setTimeout(() => d.remove(), 1300);
-    }
-
-    setTimeout(() => sw.remove(), 600);
-}
 
 
 

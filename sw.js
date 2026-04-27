@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sweet-merge-v3.3'; 
+const CACHE_NAME = 'sweet-merge-v3.7'; 
 const ASSETS = [
   './',
   './index.html',

@@ -8,15 +8,14 @@ const SWEETS = [
     { level: 7, emoji: '🍮', name: '3 Dilim Çikolatalı Pasta' },
     { level: 8, emoji: '🎂', name: '1 Kat Meyveli Pasta' },
     { level: 9, emoji: '🍩', name: '2 Kat Çikolatalı Pasta' },
-    { level: 10, emoji: '🧁', name: '3 Kat Meyveli Pasta' }
+    { level: 10, emoji: '🧁', name: '3 Kat Meyveli Pasta' },
+    { level: 11, emoji: '🍨', name: 'Dondurma Kasesi' },
+    { level: 12, emoji: '🥞', name: 'Ballı Krep' }
 ];
 
 // Cell Types:
 // 0: Empty
-// 1-11: Sweets
-// 100: Obstacle (Box)
-// 200: Rocket Bomb  — clears row + column
-// 300: TNT Bomb     — clears 3x3 area
+// 1-12: Sweets
 
 class GameLogic {
     constructor(size = 5) {
@@ -40,9 +39,6 @@ class GameLogic {
         this.onTargetReached = null;
         this.onGameOver      = null;
         this.onSoundEvent    = null;
-        this.onPowerupChange = null;
-        this.onRocketExplode = null;
-        this.onBombExplode   = null;
         this.onBigMerge      = null; // fires with (newLevel, r, c) on 4-tile match
         this.onGoldChange    = null;
         this.gold            = 0;
@@ -111,8 +107,7 @@ class GameLogic {
         while (this.findMatches().length > 0 && safety < 200) {
             for (let r = 0; r < this.size; r++)
                 for (let c = 0; c < this.size; c++)
-                    if (this.grid[r][c] !== 100)
-                        this.grid[r][c] = this.getRandomSweet();
+                    this.grid[r][c] = this.getRandomSweet();
             safety++;
         }
 
@@ -153,96 +148,35 @@ class GameLogic {
         this._saveHistory();
         this.isProcessing = true;
         this.comboCount   = 0;
-        let ok = false;
 
-        // TNT activation
-        if (val1 === 300 || val2 === 300) {
-            this.grid[r1][c1] = val2;
-            this.grid[r2][c2] = val1;
-            const tntR = val1 === 300 ? r2 : r1;
-            const tntC = val1 === 300 ? c2 : c1;
-            await this.activateTNT(tntR, tntC);
-            ok = true;
-        }
-        // Rocket activation
-        else if (val1 === 200 || val2 === 200) {
-            this.grid[r1][c1] = val2;
-            this.grid[r2][c2] = val1;
-            if (val1 === 200) await this.activateRocket(r2, c2);
-            else              await this.activateRocket(r1, c1);
-            ok = true;
-        }
-        else {
-            // Normal swap
-            this.grid[r1][c1] = val2;
-            this.grid[r2][c2] = val1;
-            const matches = this.findMatches();
-            if (matches.length === 0) {
-                this.grid[r1][c1] = val1;
-                this.grid[r2][c2] = val2;
-                ok = false;
-            } else {
-                if (this.onSoundEvent) this.onSoundEvent('swap_success', 0);
-                await this.processMatches(matches, r2, c2);
-                ok = true;
-            }
+        // Normal swap
+        this.grid[r1][c1] = val2;
+        this.grid[r2][c2] = val1;
+        const matches = this.findMatches();
+        if (matches.length === 0) {
+            this.grid[r1][c1] = val1;
+            this.grid[r2][c2] = val2;
+            this.isProcessing = false;
+            return false;
+        } else {
+            if (this.onSoundEvent) this.onSoundEvent('swap_success', 0);
+            await this.processMatches(matches, r2, c2);
         }
 
         // Check game-over after all cascades
-        if (ok) {
-            if (!this.isMovePossible()) {
-                if (this.onGameOver) this.onGameOver();
-            }
+        if (!this.isMovePossible()) {
+            if (this.onGameOver) this.onGameOver();
         }
 
         this.isProcessing = false;
-        return ok;
+        return true;
     }
 
-    /* ===================== ROCKET ===================== */
-    async activateRocket(r, c) {
-        if (this.onSoundEvent)    this.onSoundEvent('rocket', this.comboCount);
-        if (this.onRocketExplode) this.onRocketExplode(r, c);
-
-        this.grid[r][c] = 0;
-        if (this.onPowerupChange) this.onPowerupChange(this.shuffleCount, this.undoCount);
-        if (this.onScoreChange) this.onScoreChange(this.score);
-        if (this.onGridChange)  this.onGridChange();
-        await this.sleep(600);
-        await this.applyGravity();
-    }
-
-    /* ===================== TNT ===================== */
-    async activateTNT(r, c) {
-        if (this.onSoundEvent)  this.onSoundEvent('tnt', this.comboCount);
-        if (this.onBombExplode) this.onBombExplode(r, c);
-
-        this.grid[r][c] = 0;
-
-        // 3x3 blast
-        for (let dr = -1; dr <= 1; dr++) {
-            for (let dc = -1; dc <= 1; dc++) {
-                const nr = r + dr, nc = c + dc;
-                if (nr < 0 || nr >= this.size || nc < 0 || nc >= this.size) continue;
-                if (this.grid[nr][nc] === 100) {
-                    // break box
-                    this.grid[nr][nc] = 0; this.score += 50;
-                } else if (this.grid[nr][nc] > 0) {
-                    this.grid[nr][nc] = 0; this.score += 15;
-                }
-            }
-        }
-        if (this.onPowerupChange) this.onPowerupChange(this.shuffleCount, this.undoCount);
-        if (this.onScoreChange) this.onScoreChange(this.score);
-        if (this.onGridChange)  this.onGridChange();
-        await this.sleep(600);
-        await this.applyGravity();
-    }
 
     /* ===================== MATCH FINDING ===================== */
     findMatches() {
         const matches = [];
-        const isMatchable = (v) => v > 0 && v < 100;
+        const isMatchable = (v) => v > 0;
 
         // --- 2x2 SQUARE detection (same sweet, 2×2 block) ---
         const usedInSquare = new Set();
@@ -335,17 +269,6 @@ class GameLogic {
         return matches;
     }
 
-    damageAdjacentBoxes(r, c) {
-        [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr, dc]) => {
-            const nr = r + dr, nc = c + dc;
-            if (nr >= 0 && nr < this.size && nc >= 0 && nc < this.size) {
-                if (this.grid[nr][nc] === 100) {
-                    this.grid[nr][nc] = 0;
-                    this.score += 50;
-                }
-            }
-        });
-    }
 
     /* ===================== PROCESS MATCHES ===================== */
     async processMatches(matches, targetR = -1, targetC = -1) {
@@ -406,7 +329,7 @@ class GameLogic {
                 if (this.onBigMerge) this.onBigMerge(1, upR, upC); // 4-row -> Undo
             }
 
-            const nextLevel = Math.min(m.level + levelsUp, 10);
+            const nextLevel = Math.min(m.level + levelsUp, 12);
 
             if (nextLevel > this.maxUnlockedLevel) this.maxUnlockedLevel = nextLevel;
             
@@ -438,7 +361,6 @@ class GameLogic {
                         toEmpty.add(tKey);
                     }
                 }
-                this.damageAdjacentBoxes(t.r, t.c);
             });
         });
 
@@ -629,8 +551,8 @@ class GameLogic {
             for (let r = this.size - 1; r >= 0; r--) {
                 if (this.grid[r][c] === 0) {
                     let above = r - 1;
-                    while (above >= 0 && (this.grid[above][c] === 0 || this.grid[above][c] === 100)) above--;
-                    if (above >= 0 && this.grid[above][c] !== 100) {
+                    while (above >= 0 && this.grid[above][c] === 0) above--;
+                    if (above >= 0) {
                         this.grid[r][c] = this.grid[above][c];
                         this.grid[above][c] = 0;
                         changed = true;
@@ -642,11 +564,8 @@ class GameLogic {
         for (let c = 0; c < this.size; c++) {
             for (let r = 0; r < this.size; r++) {
                 if (this.grid[r][c] === 0) {
-                    let trapped = false;
-                    for (let a = r - 1; a >= 0; a--) {
-                        if (this.grid[a][c] === 100) { trapped = true; break; }
-                    }
-                    if (!trapped) { this.grid[r][c] = this.getRandomSweet(); changed = true; }
+                    this.grid[r][c] = this.getRandomSweet(); 
+                    changed = true; 
                 }
             }
         }
@@ -665,10 +584,14 @@ class GameLogic {
 
     /* ===================== POWER-UPS ===================== */
     async shuffle() {
+        if (this.isProcessing) return;
+        this.isProcessing = true;
+        this.comboCount = 0; // Reset combo on shuffle to prevent cross-move combo exploits
+
         const vals = [];
         for (let r = 0; r < this.size; r++)
             for (let c = 0; c < this.size; c++)
-                if (this.grid[r][c] !== 100) vals.push(this.grid[r][c]);
+                vals.push(this.grid[r][c]);
 
         for (let i = vals.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -677,7 +600,7 @@ class GameLogic {
         let idx = 0;
         for (let r = 0; r < this.size; r++)
             for (let c = 0; c < this.size; c++)
-                if (this.grid[r][c] !== 100) this.grid[r][c] = vals[idx++];
+                this.grid[r][c] = vals[idx++];
 
         if (this.onGridChange) this.onGridChange();
         
@@ -687,6 +610,7 @@ class GameLogic {
             await this.sleep(300);
             await this.processMatches(chain);
         }
+        this.isProcessing = false;
     }
     isMovePossible() {
         return this.getPossibleMove() !== null;
@@ -697,12 +621,12 @@ class GameLogic {
         for (let r = 0; r < this.size; r++) {
             for (let c = 0; c < this.size; c++) {
                 const val = this.grid[r][c];
-                if (val <= 0 || val === 100) continue;
+                if (val <= 0) continue;
 
                 // Try Right
                 if (c + 1 < this.size) {
                     const nextVal = this.grid[r][c+1];
-                    if (nextVal > 0 && nextVal !== 100) {
+                    if (nextVal > 0) {
                         // Swap
                         this.grid[r][c] = nextVal;
                         this.grid[r][c+1] = val;
@@ -716,7 +640,7 @@ class GameLogic {
                 // Try Down
                 if (r + 1 < this.size) {
                     const nextVal = this.grid[r+1][c];
-                    if (nextVal > 0 && nextVal !== 100) {
+                    if (nextVal > 0) {
                         // Swap
                         this.grid[r][c] = nextVal;
                         this.grid[r+1][c] = val;
