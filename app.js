@@ -35,6 +35,9 @@ const convertBtn        = document.getElementById('convert-btn');
 const guideTextEl       = document.getElementById('guide-text');
 const nameInputEl       = document.getElementById('player-name-input');
 const top5ContentEl     = document.getElementById('top-5-content');
+const leaderboardBtn    = document.getElementById('leaderboard-btn');
+const leaderboardModal  = document.getElementById('leaderboard-modal');
+const closeLeaderboardBtn = document.getElementById('close-leaderboard-btn');
 
 // ===================== FIREBASE CONFIG =====================
 const firebaseConfig = {
@@ -325,6 +328,15 @@ muteBtn.addEventListener('click', () => {
     muteBtn.style.opacity = isMuted ? '0.5' : '1';
 });
 
+leaderboardBtn.addEventListener('click', () => {
+    leaderboardModal.classList.add('visible');
+    startLeaderboardListener();
+});
+
+closeLeaderboardBtn.addEventListener('click', () => {
+    leaderboardModal.classList.remove('visible');
+});
+
 shuffleBtn.addEventListener('click', async () => {
     if (game.isProcessing || game.shuffleCount <= 0) return;
     game.shuffleCount--;
@@ -610,9 +622,11 @@ function getSweetInfo(val) {
 function renderGrid(isUndo = false) {
     gridContainer.innerHTML = '';
 
-    const PADDING = 5;
-    const GAP     = 5;
-    const TILE    = 62;
+    const rect = gridContainer.getBoundingClientRect();
+    const containerW = rect.width || 340;
+    const PADDING = containerW * (5 / 340); // Proportional padding
+    const GAP     = containerW * (5 / 340); // Proportional gap
+    const TILE    = (containerW - (PADDING * 2) - (GAP * (BOARD_SIZE - 1))) / BOARD_SIZE;
 
     for (let r = 0; r < BOARD_SIZE; r++) {
         for (let c = 0; c < BOARD_SIZE; c++) {
@@ -635,9 +649,10 @@ function renderGrid(isUndo = false) {
             if (val > 0 && val < 100) html += `<div class="level-badge">${val}</div>`;
             tile.innerHTML = html;
 
-            // Pixel-perfect positioning: 5px padding + index * (62px tile + 5px gap)
-            tile.style.top  = `${PADDING + r * (TILE + GAP)}px`;
-            tile.style.left = `${PADDING + c * (TILE + GAP)}px`;
+            tile.style.width  = `${TILE}px`;
+            tile.style.height = `${TILE}px`;
+            tile.style.top    = `${PADDING + r * (TILE + GAP)}px`;
+            tile.style.left   = `${PADDING + c * (TILE + GAP)}px`;
             
             tile.dataset.r  = r;
             tile.dataset.c  = c;

@@ -25,6 +25,7 @@ body {
     background: var(--bg-gradient);
     color: var(--text-color);
     height: 100vh;
+    height: 100dvh;
     width: 100vw;
     overflow: hidden;
 }
@@ -37,6 +38,7 @@ body {
 #menu-screen {
     width: 100%;
     height: 100vh;
+    height: 100dvh;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -170,6 +172,7 @@ body {
 #game-screen {
     width: 100%;
     height: 100vh;
+    height: 100dvh;
     display: flex;
     justify-content: center;
     align-items: flex-start;
@@ -180,6 +183,7 @@ body {
     width: 100%;
     max-width: 480px;
     height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     padding: 8px 12px;
@@ -268,6 +272,14 @@ body {
     max-width: 280px;
     border: 1px solid rgba(255,255,255,0.5);
     box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+}
+
+.modal-leaderboard {
+    background: none !important;
+    backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 auto !important;
 }
 
 .top-5-header {
@@ -756,7 +768,78 @@ body {
 
 #retry-btn { background: #4caf50; }
 
+.close-modal-btn {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    background: rgba(0,0,0,0.05);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+    color: #8d6e63;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 100;
+}
+
+.close-modal-btn:hover {
+    background: rgba(0,0,0,0.1);
+}
+
+.leaderboard-modal-content {
+    padding: 40px 20px 25px 20px !important;
+}
+
+@media (max-height: 700px) {
+    .game-board-bg {
+        width: 320px;
+        height: 320px;
+        padding: 8px;
+    }
+    .grid-container {
+        width: 304px;
+        height: 304px;
+        gap: 4px;
+        padding: 4px;
+    }
+    .tile {
+        width: 56px;
+        height: 56px;
+        font-size: 34px;
+    }
+    .tile.selected {
+        transform: scale(1.08);
+    }
+    /* Reposition tiles in JS or adjust the math there if needed, 
+       but for now we scale the container. */
+}
+
 @keyframes float {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-10px); }
+}
+
+.shuffle-anim {
+    animation: shuffleMove 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes shuffleMove {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    50% { transform: translate(var(--move-x), var(--move-y)) rotate(180deg) scale(0.6); opacity: 0.5; }
+    100% { transform: translate(0, 0) rotate(360deg) scale(1); opacity: 1; }
+}
+
+@media (max-width: 380px) {
+    .evolution-bar {
+        font-size: 11px;
+        padding: 5px 10px;
+    }
+    .evo-row {
+        gap: 2px;
+    }
 }

@@ -62,6 +62,7 @@
                 <!-- Sağ: Butonlar / En İyi (skor alanında) / Mevcut Skor (altında) -->
                 <div class="header-right">
                     <div class="header-btns">
+                        <button class="icon-btn" id="leaderboard-btn" title="Liderlik Tablosu">🏆</button>
                         <button class="icon-btn" id="restart-btn" title="Yeniden Başla">🔄</button>
                         <button class="mute-btn" id="mute-btn">🔊</button>
                     </div>
@@ -72,13 +73,6 @@
                 </div>
             </div>
 
-            <!-- Global Top 5 List -->
-            <div id="top-5-container" class="top-5-list">
-                <div class="top-5-header">👑 LİDERLİK TABLOSU 👑</div>
-                <div id="top-5-content" class="top-5-content">
-                    <span>Skorlar yükleniyor...</span>
-                </div>
-            </div>
 
             <!-- Game Area -->
             <main class="game-area">
@@ -119,6 +113,19 @@
                 </div>
             </div>
 
+        </div>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div class="modal" id="leaderboard-modal">
+        <div class="modal-content leaderboard-modal-content">
+            <button class="close-modal-btn" id="close-leaderboard-btn">✕</button>
+            <div id="top-5-container" class="top-5-list modal-leaderboard">
+                <div class="top-5-header">👑 LİDERLİK TABLOSU 👑</div>
+                <div id="top-5-content" class="top-5-content">
+                    <span>Skorlar yükleniyor...</span>
+                </div>
+            </div>
         </div>
     </div>
 
