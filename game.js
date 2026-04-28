@@ -537,8 +537,9 @@ class GameLogic {
 
     convertUndoToShuffle() {
         if (this.undoCount >= 5) {
-            this.undoCount -= 5;
-            this.shuffleCount += 1;
+            const count = Math.floor(this.undoCount / 5);
+            this.undoCount -= count * 5;
+            this.shuffleCount += count;
             if (this.onPowerupChange) this.onPowerupChange(this.shuffleCount, this.undoCount);
             return true;
         }
